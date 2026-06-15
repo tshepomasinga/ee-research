@@ -2,7 +2,7 @@
 
 Capstone, embedded systems, and signal processing work from BTech Electrical Engineering at Tshwane University of Technology.
 
-## Capstone: Power System Stability
+## power systems analysis: Power System Stability
 18% voltage stability improvement in 5-bus transmission network using series and shunt compensation with solar PV integration.
 
 ## Embedded Systems: Real-Time Modbus RTU

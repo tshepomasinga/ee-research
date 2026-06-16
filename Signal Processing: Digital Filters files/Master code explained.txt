@@ -1,0 +1,85 @@
+
+Below is a detailed explanation in text form outlining the main functions, parameters, 
+and interface flow in the AVR Atmega328P C code for the SPR307B project:
+
+Explanation of Code Functions and Parameters
+
+Overview
+
+The code implements an interactive signal generator on an Atmega328P microcontroller.
+It allows the user to input their student number, select signal type (sine or square), 
+and select from 3 frequencies derived from the last three non-zero digits of the student number. 
+The microcontroller generates PWM signals to approximate these waveforms at selected frequencies. 
+The user interface is via keypad input and a 16x2 LCD display.
+
+Key Components and Functions
+
+1. LCD Interface
+            - Uses PORTC pins (PC0-PC5) for a 4-bit mode interface to a 16x2 LCD.
+            - `lcd_init()`, `lcd_cmd()`, `lcd_data()`, `lcd_gotoxy()`, and `lcd_print()` control LCD initialization, command sending, cursor movement, and text printing.
+            - Provides user feedback on LCD about input prompts, signal type, frequency, and current output.
+
+2. Signal Selection I/O
+            - PORTB pins PB2, PB4, PB6, PB7 serve as signal selector lines (`SEL_A` to `SEL_D`).
+            - Inline functions `sel_none()`, `sel_A()`, `sel_B()`, `sel_C()`, `sel_D()` manage which selector pin is active by setting PORTB bits.
+            - These select between channels related to signal waveform and frequency outputs.
+
+3.PWM Signal Outputs
+            - PWM outputs are on PB1, PB3, and PB5 (`PWM1`, `PWM2`, `PWM3`).
+            - Timer1 (16-bit) controls PB1, Timer2 (8-bit) controls PB3.
+            - Timer0 interrupt based toggle controls PB5.
+            - Functions `t1_pb1_set_freq()`, `t2_pb3_set_freq()`, and `t0_init_1kHz_and_set_pb5()` 
+              configure timers with optimal prescaler and output compare registers for desired frequencies.
+            - PWM signals approximate square/sine wave outputs.
+
+4. Student Number Parsing
+            - The 9-digit student number is input via keypad with interrupt-driven key detection on INT0.
+            - `last3_nonzero()` extracts the last three non-zero digits of the student number, which define the frequencies (units, tens, hundreds).
+            - If no digit, default frequency digit is 5.
+
+5. User Interface Flow
+   1. Stage 0: User inputs 9-digit student number.
+            - Keys 0-9 enter digits.
+            - Key '*' (represented as 14) confirms input.
+            - LCD prompts for input and displays typed number.
+2. Stage 1: Signal type selection via keypad keys:
+             - Key 'A' selects sine wave.
+             - Key 'B' selects square wave.
+             - LCD shows selection and prompts frequency selection.
+3. Stage 2: Frequency selection from three options via keypad keys 1, 2, 3.
+               Frequencies mapped according to last 3 digits:
+              - Option 1 → units digit frequency
+              - Option 2 → tens digit frequency multiplied by 10
+              - Option 3 → hundreds digit frequency multiplied by 100
+4. Stage 3: Output generation and display refresh.
+                - Depending on signal type and frequency selected, appropriate selector pins and PWM timer configuration functions are called to output signal.
+                - LCD displays output type and frequency.
+5. Stage 4: Final stage to hold output state with no further refresh until reset.
+
+ Interrupts Service Routines:
+	- INT0 ISR: Handles keypad key detection.
+	- TIMER0 COMPA ISR: Used for software toggling PWM on PB5.
+
+Parameter Calculations and Timer Configuration
+- `t1_pb1_set_freq()`, `t2_pb3_set_freq()`: 
+	Given a desired frequency, these functions iterate over available hardware prescaler options to compute optimal 
+	Output Compare Register (OCR) values that fit within timer register limits.
+	- These OCR values determine the PWM period to roughly match the required output frequency.
+	- For frequencies where no exact match fits the registers, maximum value is used.
+	- For timer0 (PB5), software toggling uses a base 1kHz setup then divides this by calculated values to approximate output frequency.
+
+Summary
+	- The program provides a flexible signal generator on Atmega328P allowing waveform and frequency selection driven by user input.
+	- It harnesses hardware PWM timers and software interrupts to produce frequency-accurate waveforms.
+	- The LCD user interface guides and confirms input and output choices interactively.
+	- Frequency and waveform parameters are derived directly from student number digits, fulfilling project specification.
+	- Interrupt-driven keypad detection ensures responsive user input.
+
+References:
+[1](https://www.allaboutcircuits.com/projects/how-to-DIY-waveform-generator-analog-devices-ad9833-ATmega328p/)
+[2](https://www.reddit.com/r/AskElectronics/comments/7mn87m/square_wave_generator_using_atmega328p_design/)
+[3](https://www.instructables.com/Function-Generator-AD9833-Based/)
+[4](https://www.avrfreaks.net/s/topic/a5C3l000000Ua00EAC/t152174)
+[5](https://forum.arduino.cc/t/diy-function-generator-using-arduino-uno/692541)
+[6](https://www.irjmets.com/uploadedfiles/paper/volume_3/issue_10_october_2021/16834/final/fin_irjmets1635238311.pdf)
+[7](https://gist.github.com/Wollw/2425784)
